@@ -1,1 +1,0 @@
-docker build -t cycling-weather . && docker run -p 1234:1234 cycling-weather deploy
