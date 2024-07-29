@@ -1,0 +1,23 @@
+[
+    {
+        "name": "Orinda - Paradise Loop - Orinda",
+        "garmin_connect_link": "https://connect.garmin.com/modern/course/32330296",
+        "distance_mi": 71.52,
+        "accent_ft": 4859,
+        "cities": ["Orinda, CA", "San Rafael, CA", "Tiburon, CA"]
+    },
+    {
+        "name": "ClaCos: Marina & Carmel",
+        "garmin_connect_link": "https://connect.garmin.com/modern/course/286466207",
+        "distance_mi": 56.95,
+        "accent_ft": 3044,
+        "cities": ["Monterey, CA", "Marina, CA", "Carmel-by-the-sea, CA"]
+    },
+    {
+        "name": "Mt Diablo + backside",
+        "garmin_connect_link": "https://connect.garmin.com/modern/course/5610080",
+        "distance_mi": 64.83,
+        "accent_ft": 7147,
+        "cities": ["Clayton, CA", "Livermore, CA", "San Ramon, CA", "Walnut Creek, CA"]
+    }
+]
