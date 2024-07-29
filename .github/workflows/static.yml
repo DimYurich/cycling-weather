@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Generate page
-        run: cd cycling-weather; cross-env NODE_ENV=production parcel build src/index.html --public-url .
+        run: NODE_ENV=production parcel build src/index.html --public-url .
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
