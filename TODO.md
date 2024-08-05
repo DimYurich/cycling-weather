@@ -4,9 +4,10 @@
 
 ### TODOs
 
-* Rework docker container to pick up changes dynamically
-* Find out how to read a json file
+* Use React & JSX for markup & data glue
 * Find out proper Weather API calls
   * which weather API to use?
 * Check https://github.com/tcgoetz/GarminDB for route data
 * Bootstrap for styling
+~~* Find out how to read a json file~~
+~~* Rework docker container to pick up changes dynamically~~
