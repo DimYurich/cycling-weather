@@ -6,8 +6,10 @@
         "start": "parcel serve src/index.html"
     },
     "devDependencies": {
-        "cross-env": "^7.0.0",
         "parcel": "^2.0.0",
         "typescript": "^2.9.2"
+    },
+    "dependencies": {
+        "@types/node": "*"
     }
 }
