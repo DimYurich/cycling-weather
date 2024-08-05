@@ -1,1 +1,1 @@
-docker build -t cycling-weather . && docker run -p 1234:1234 -v ./src:/app/src cycling-weather
+docker stop cycling-weather || docker build -t cycling-weather . && docker run --name cycling-weather -p 1234:1234 -v ./src:/app/src cycling-weather
