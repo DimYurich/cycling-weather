@@ -4,11 +4,11 @@
 
 ### TODOs
 
-* Use React & JSX for markup & data glue
 * Find out proper Weather API calls
   * which weather API to use?
 * Check https://github.com/tcgoetz/GarminDB for route data
 * Bootstrap for styling
+~~* Use React & JSX for markup & data glue~~
 ~~* Upgrade Node to 22 in package.json & Dockerfile~~
 ~~* Find out how to read a json file~~
 ~~* Rework docker container to pick up changes dynamically~~
