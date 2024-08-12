@@ -1,1 +1,1 @@
-docker stop cycling-weather; docker rm cycling-weather; docker build -t cycling-weather . && docker run --name cycling-weather -p 1234:1234 -v ./src:/app/src cycling-weather
+yarn start
