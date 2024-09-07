@@ -8,7 +8,7 @@ export interface CourseDescriptionData {
     cities: string[];
 }
 
-export function fetchCourses(filename: string): CourseDescriptionData[] {
+export const fetchCourses = (filename: string): CourseDescriptionData[] => {
     let rawData = readFileSync(filename, 'utf-8')
     return JSON.parse(rawData);
 }

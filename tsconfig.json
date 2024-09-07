@@ -20,7 +20,7 @@
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
         // Extra expects for jest
-        "types": ["@testing-library/jest-dom"]
+        "types": ["@testing-library/jest-dom", "node"]
     },
     "include": [
         "src/**/*"

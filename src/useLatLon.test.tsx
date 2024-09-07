@@ -1,17 +1,18 @@
 import { useLatLon } from './useLatLon';
 import { render, screen, act, waitFor } from '@testing-library/react'
-import { FunctionComponent } from 'react'; // importing FunctionComponent
+import { FunctionComponent } from 'react';
 import '@testing-library/jest-dom'
 import { SWRConfig } from 'swr'
 import 'isomorphic-fetch'
+import { fetchCourses } from './CourseDescriptionData' 
 
 type fetcherFunc = (_: string) => Promise<Response>
-const mockFetcherFunc = (response: string) : fetcherFunc => (_: string) => Promise.resolve(new Response(response)).then(_ => _.json())
+const mockFetcherFor = (response: string) : fetcherFunc => (_: string) => Promise.resolve(new Response(response)).then(_ => _.json())
 
 describe('mockFetcher', () => {
     it('resolves to whatever is provided', async () => {
         let expected = {"test":"test"}
-        const mockFetcher = mockFetcherFunc(JSON.stringify(expected))
+        const mockFetcher = mockFetcherFor(JSON.stringify(expected))
         let actual = null
         await mockFetcher('_').then(r => actual = r)
         expect(actual).toStrictEqual(expected)
@@ -48,6 +49,8 @@ const verifyOutput = async (dataTestId: string) => {
     expect(screen.getByTestId(dataTestId)).toBeInTheDocument()
 }
 
+const realFetcher = (url: string) => fetch(url).then(_ => _.json())
+
 describe('useLatLon component test', () => {
     type testDesc = {
         testName: string,
@@ -56,7 +59,6 @@ describe('useLatLon component test', () => {
         expectedTestDataId: string
     }
 
-    const realFetcher = (url: string) => fetch(url).then(_ => _.json())
     const tests: testDesc[] = [{
         testName: 'renders properly with real data',
         fetcher: realFetcher,
@@ -69,12 +71,12 @@ describe('useLatLon component test', () => {
         expectedTestDataId: 'error'
     },{
         testName: 'renders properly with mockFetcher',
-        fetcher: mockFetcherFunc('{total_count=1, results=[{latitude=37.9410, longitude=121.9358}]}'),
+        fetcher: mockFetcherFor('{total_count=1, results=[{latitude=37.9410, longitude=121.9358}]}'),
         cityName: 'Clayton, CA',
         expectedTestDataId: 'data'
     },{
         testName: 'fails when no cities are resolved',
-        fetcher: mockFetcherFunc('{total_count=0, results=[]}'),
+        fetcher: mockFetcherFor('{total_count=0, results=[]}'),
         cityName: 'Carmel-by-the-sea, CA',
         expectedTestDataId: 'error'
     }]
@@ -83,4 +85,17 @@ describe('useLatLon component test', () => {
         runTest(test.cityName, test.fetcher)
         verifyOutput(test.expectedTestDataId)
     }))
+})
+
+describe('cities in routes test', () => {
+    const rawData = fetchCourses('./src/contents.json');
+    const cities = new Set<string>()
+    rawData.forEach(course => course.cities.forEach(city => cities.add(city)))
+    
+    cities.forEach(city => {
+        it('Testing ' + city, async () => {
+            runTest(city, realFetcher)
+            verifyOutput('data')
+        })    
+    })
 })

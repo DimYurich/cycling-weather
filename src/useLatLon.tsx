@@ -16,7 +16,7 @@ const prepareCityApiCall = (city: string): string => {
 const identity = (r: any) => r
 
 export const useLatLon = (city: string, fetcher: (_: string) => Promise<any>): SWRResponse<LatLon, Error, boolean> => {
-    let url = prepareCityApiCall(city)
+    const url = prepareCityApiCall(city)
     const { data, error, isLoading } = useSWR(url, fetcher)
 
     if (isLoading || error) {
@@ -26,7 +26,7 @@ export const useLatLon = (city: string, fetcher: (_: string) => Promise<any>): S
     } else if (data.total_count > 1) {
         return { data: undefined, error: Error("Multiple cities resolved by name of " + city), isLoading: false, mutate: identity, isValidating: false }
     } else if (data.results != undefined) {
-        let result: LatLon = data.results[0]
+        const result: LatLon = data.results[0]
         return { data: result, error: error, isLoading: isLoading, mutate: identity, isValidating: false }
     }
     return { data: undefined, error: Error("Should not happen"), isLoading: false, mutate: identity, isValidating: false }
