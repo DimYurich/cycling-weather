@@ -1,5 +1,6 @@
-import { readFileSync } from 'fs';
+import { fetchCourses, CourseDescriptionData } from "./CourseDescriptionData"
 import { memo, useState, useEffect } from 'react';
+import { Md5 } from 'ts-md5';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -21,6 +22,8 @@ const cyclingHoursStart = 7 // 07:00
 const cyclingHoursDuration = 14 // 07:00 to 20:00, inclusive
 const cyclingHours = [...Array(cyclingHoursDuration).keys()].map(hour => hour + cyclingHoursStart)
 
+const fetcher = (url: string) => fetch(url).then(_ => _.json())
+
 export default function CyclingWeather() {
     return (
         <div>
@@ -37,14 +40,6 @@ function nextSaturday() {
     return d
 }
 
-interface CourseDescriptionData {
-    name: string;
-    garmin_connect_link: string;
-    distance_mi: number;
-    accent_ft: number;
-    cities: string[];
-}
-
 type CityWeather = HourlyCityWeather[]
 
 interface HourlyCityWeather {
@@ -54,26 +49,20 @@ interface HourlyCityWeather {
     cloud_cover: number;
 }
 
-interface LatLon {
-    latitude: number;
-    longitude: number;
-}
-
-function RoutesList(date: Date) {
+function RoutesList() {
     const [forecastDate, setForecastDate] = useState(nextSaturday())
-    let rawData = readFileSync('./src/contents.json', 'utf-8')
-    let courses: CourseDescriptionData[] = JSON.parse(rawData);
-    return <List>{courses.map(course => <CourseDescription course={course} date={forecastDate}/>)}</List>;
+    let courses: CourseDescriptionData[] = fetchCourses('./src/contents.json');
+    let listItems = courses.map(course => <CourseDescription course={course} date={forecastDate}/>)
+    return <ul>{listItems}</ul>;
 }
-
 
 function CourseDescription({course, date}) {
-    return <ListItem key={course.name}><div>
+    return <li key={Md5.hashStr(course.name)}><div>
         <div>{course.name} [<a href={course.garmin_connect_link}>link</a>]</div>
         <div>Distance: {course.distance_mi} miles</div>
         <div>Accent: {course.accent_ft} feet</div>
         <div><WeatherForecast cities={course.cities} date={date} /></div>
-    </div></ListItem>;
+    </div></li>;
 }
 
 function WeatherForecast({cities, date}) {
@@ -93,43 +82,26 @@ function WeatherForecast({cities, date}) {
 }
 
 function CityWeatherForecast({city, date}) {
-    let cityWeather = useWeather(city, date)
-    {/*let hourlyWeather: HourlyCityWeather = {
-        temperature_f: 85,
-        windSpeed_mph: 2,
-        rainProbability: 0,
-        clouds: "Clear skies"
-    }
-    let cityWeather = cyclingHours.map(_ => hourlyWeather)*/}
-    
-    console.log(cityWeather);
+    let cityLatLonApi = prepareCityApiCall(city)
+    const { data, error, isLoading } = useSWR(cityLatLonApi, fetcher)
 
+    if (isLoading) {
+        return <div></div>
+    }
+    let total_results = data.total_results
+    if (error || total_results == 0) {
+        return <TableRow>
+            <TableCell>{city} -- BROKEN</TableCell>
+        </TableRow>    
+    }
+    let latLon = data.results[0]
     return <TableRow>
         <TableCell>{city}</TableCell>
-        {cityWeather.map(hourlyWeather => <HourlyCityWeatherForecast weather={hourlyWeather} />)}
+        <TableCell>{latLon.latitude} {latLon.longitude}</TableCell>
+        {/*{cityWeather.map(hourlyWeather => <HourlyCityWeatherForecast weather={hourlyWeather} />)}*/}
     </TableRow>
 }
 
-function HourlyCityWeatherForecast({weather}) {
-    return <TableCell><List>
-        <ListItem key="temp">
-            <ListItemIcon><ThermostatIcon/></ListItemIcon> 
-            <ListItemText>{weather.temperature_f} F</ListItemText>
-        </ListItem>
-        <ListItem key="wind">
-            <ListItemIcon><AirIcon/></ListItemIcon> 
-            <ListItemText>{weather.windSpeed_mph} mph</ListItemText>
-        </ListItem>
-        <ListItem key="rain">
-            <ListItemIcon><UmbrellaIcon/></ListItemIcon> 
-            <ListItemText>{weather.rainProbability} %</ListItemText>
-        </ListItem>
-        <ListItem key="clouds">
-            <ListItemIcon><CloudIcon/></ListItemIcon> 
-            <ListItemText>{weather.cloud_cover} %</ListItemText>
-        </ListItem>
-    </List></TableCell>
-}
 
 function useWeather(city: string, forecastDate: Date): CityWeather {    
     let date: string = forecastDate.toLocaleDateString('en-CA') // To be compatible with open-meteo API
@@ -145,9 +117,11 @@ function useWeather(city: string, forecastDate: Date): CityWeather {
 
     console.log(cacheKey(city, date));
 
-    let latlon = useCity(city)
-    let weatherApi = `https://api.open-meteo.com/v1/forecast?latitude=${latlon.latitude}&longitude=${latlon.longitude}&hourly=apparent_temperature,precipitation_probability,cloud_cover,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${date}`
-    console.log(weatherApi);
+    let cityApi = prepareCityApi(city) 
+    const { data } = useSWR(() => cityApi, fetcher)
+    //let latlon = useCity(city)
+    //let weatherApi = `https://api.open-meteo.com/v1/forecast?latitude=${latlon.latitude}&longitude=${latlon.longitude}&hourly=apparent_temperature,precipitation_probability,cloud_cover,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${date}`
+    //console.log(weatherApi);
     
 
     // useEffect(() => {
@@ -186,37 +160,5 @@ function useWeather(city: string, forecastDate: Date): CityWeather {
     //     }
     // }, [city]);
 
-    return weather;
-}
-
-
-function useCity(city: string): LatLon {
-    const [latLon, setLatLon] = useState(null);
-    const [latLonCache, setLatLonCache] = useState({});
-    
-    console.log(city)
-
-    useEffect(() => {
-        if (latLonCache[city]) {
-            setLatLon(latLonCache[city])
-        } else {
-            var parts = city.split(", ")
-            var geoApiUrl = `https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/geonames-postal-code/records?select=latitude%2C%20longitude&limit=1&refine=country_code%3A%22US%22&refine=admin_code1%3A%22${parts[1]}%22&refine=place_name%3A%22${parts[0]}%22`
-        
-            console.log(geoApiUrl)
-
-            fetch(geoApiUrl)
-                .then(response => response.json())
-                .then(json => {
-                    let latLon = json.results[0]
-                    setLatLon(latLon);
-                    setLatLonCache(prevCache => ({ ...prevCache, [city]: latLon }));
-                })
-                .catch(error => console.error(error));
-        }
-    }, []);
-
-    console.log(latLon)
-
-    return latLon;
+    return null;
 }
