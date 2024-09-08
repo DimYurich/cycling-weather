@@ -5,19 +5,7 @@ import '@testing-library/jest-dom'
 import { SWRConfig } from 'swr'
 import 'isomorphic-fetch'
 import { fetchCourses } from './CourseDescriptionData' 
-
-type fetcherFunc = (_: string) => Promise<Response>
-const mockFetcherFor = (response: string) : fetcherFunc => (_: string) => Promise.resolve(new Response(response)).then(_ => _.json())
-
-describe('mockFetcher', () => {
-    it('resolves to whatever is provided', async () => {
-        let expected = {"test":"test"}
-        const mockFetcher = mockFetcherFor(JSON.stringify(expected))
-        let actual = null
-        await mockFetcher('_').then(r => actual = r)
-        expect(actual).toStrictEqual(expected)
-    })
-})
+import { realFetcher, mockFetcherFor, fetcherFunc } from './testutils';
 
 type TestComponentProps = {
     city: string,
@@ -48,8 +36,6 @@ const verifyOutput = async (dataTestId: string) => {
     await waitFor(() => screen.getByTestId(dataTestId))
     expect(screen.getByTestId(dataTestId)).toBeInTheDocument()
 }
-
-const realFetcher = (url: string) => fetch(url).then(_ => _.json())
 
 describe('useLatLon component test', () => {
     type testDesc = {

@@ -7,6 +7,7 @@
 
 ### TODOs
 
+* Remove jest.setuptests and jest.polyfills files
 * Find out proper Weather API calls
   * which weather API to use?
 * Make routes data collapsible in UI
