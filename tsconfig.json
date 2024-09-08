@@ -11,14 +11,20 @@
         "jsx": "react-jsx",
         "jsxImportSource": "react",
         "lib": [
-            "es2017",
-            "dom"
+            "es2015",
+            "dom",
+            //https://mariusschulz.com/blog/downlevel-iteration-for-es3-es5-in-typescript
+            "es2015.collection",
+            "es2015.iterable"
         ],
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
+        // https://mariusschulz.com/blog/downlevel-iteration-for-es3-es5-in-typescript
+        "downlevelIteration": true,
+        "importHelpers": true,
         // Extra expects for jest
         "types": ["@testing-library/jest-dom", "node"]
     },

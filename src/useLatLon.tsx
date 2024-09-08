@@ -13,21 +13,19 @@ const prepareCityApiCall = (city: string): string => {
               `&refine=admin_code1%3A%22${parts[1]}%22&refine=place_name%3A%22${parts[0]}%22`
 }
 
-const identity = (r: any) => r
-
 export const useLatLon = (city: string, fetcher: (_: string) => Promise<any>): SWRResponse<LatLon, Error, boolean> => {
     const url = prepareCityApiCall(city)
-    const { data, error, isLoading } = useSWR(url, fetcher)
+    const response = useSWR(url, fetcher)
 
-    if (isLoading || error) {
-        return { data: undefined, error: error, isLoading: isLoading, mutate: identity, isValidating: false }
-    } else if (data.total_count == 0) {
-        return { data: undefined, error: Error("No cities resolved by name of " + city), isLoading: false, mutate: identity, isValidating: false }
-    } else if (data.total_count > 1) {
-        return { data: undefined, error: Error("Multiple cities resolved by name of " + city), isLoading: false, mutate: identity, isValidating: false }
-    } else if (data.results != undefined) {
-        const result: LatLon = data.results[0]
-        return { data: result, error: error, isLoading: isLoading, mutate: identity, isValidating: false }
+    if (response.isLoading || response.error) {
+        return response
+    } else if (response.data.total_count == 0) {
+        return { data: response.data, error: Error("No cities resolved by name of " + city), isLoading: response.isLoading, mutate: response.mutate, isValidating: response.isValidating }
+    } else if (response.data.total_count > 1) {
+        return { data: response.data, error: Error("Multiple cities resolved by name of " + city), isLoading: response.isLoading, mutate: response.mutate, isValidating: response.isValidating }
+    } else if (response.data.results != undefined) {
+        const result: LatLon = response.data.results[0]
+        return { data: result, error: response.error, isLoading: response.isLoading, mutate: response.mutate, isValidating: response.isValidating }
     }
-    return { data: undefined, error: Error("Should not happen"), isLoading: false, mutate: identity, isValidating: false }
+    return { data: response.data, error: Error("Should not happen"), isLoading: response.isLoading, mutate: response.mutate, isValidating: response.isValidating }
 }

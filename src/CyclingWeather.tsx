@@ -16,11 +16,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import useSWR from 'swr'
-
-const cyclingHoursStart = 7 // 07:00
-const cyclingHoursDuration = 14 // 07:00 to 20:00, inclusive
-const cyclingHours = [...Array(cyclingHoursDuration).keys()].map(hour => hour + cyclingHoursStart)
+import { useWeather } from "./useWeather";
 
 const fetcher = (url: string) => fetch(url).then(_ => _.json())
 
@@ -82,83 +78,22 @@ function WeatherForecast({cities, date}) {
 }
 
 function CityWeatherForecast({city, date}) {
-    let cityLatLonApi = prepareCityApiCall(city)
-    const { data, error, isLoading } = useSWR(cityLatLonApi, fetcher)
+    const { data, error, isLoading } = useWeather(city, date, fetcher)
 
-    if (isLoading) {
+    if (isLoading || !data || error) {
         return <div></div>
     }
-    let total_results = data.total_results
-    if (error || total_results == 0) {
-        return <TableRow>
-            <TableCell>{city} -- BROKEN</TableCell>
-        </TableRow>    
-    }
-    let latLon = data.results[0]
     return <TableRow>
         <TableCell>{city}</TableCell>
-        <TableCell>{latLon.latitude} {latLon.longitude}</TableCell>
-        {/*{cityWeather.map(hourlyWeather => <HourlyCityWeatherForecast weather={hourlyWeather} />)}*/}
+        {data.map(hourlyWeather => <HourlyCityWeatherForecast weather={hourlyWeather} />)}
     </TableRow>
 }
 
-
-function useWeather(city: string, forecastDate: Date): CityWeather {    
-    let date: string = forecastDate.toLocaleDateString('en-CA') // To be compatible with open-meteo API
-    function cacheKey(city: string, date: string): string {
-        return JSON.stringify({
-            "city": city,
-            "date": date,
-        })
-    }
-
-    const [weather, setWeather] = useState(null);
-    const [weatherCache, setWeatherCache] = useState({});
-
-    console.log(cacheKey(city, date));
-
-    let cityApi = prepareCityApi(city) 
-    const { data } = useSWR(() => cityApi, fetcher)
-    //let latlon = useCity(city)
-    //let weatherApi = `https://api.open-meteo.com/v1/forecast?latitude=${latlon.latitude}&longitude=${latlon.longitude}&hourly=apparent_temperature,precipitation_probability,cloud_cover,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${date}`
-    //console.log(weatherApi);
-    
-
-    // useEffect(() => {
-    //     let key = cacheKey(city, date)
-    //     console.log("in effect")
-    //     if (weatherCache[key]) {
-    //         setWeather(weatherCache[key])
-    //         console.log("hit cache");
-    //     } else {
-    //         let latlon = useCity(city)
-    //         console.log(latlon)
-    //         // https://api.open-meteo.com/v1/forecast?latitude=37.941&longitude=-121.9358&hourly=apparent_temperature,precipitation_probability,cloud_cover,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=2024-08-11&end_date=2024-08-11
-    //         let weatherApi = `https://api.open-meteo.com/v1/forecast?latitude=${latlon.latitude}&longitude=${latlon.longitude}&hourly=apparent_temperature,precipitation_probability,cloud_cover,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${date}`
-    //         console.log(weatherApi);
-    //         fetch(weatherApi)
-    //             .then(response => response.json())
-    //             .then(json => {
-    //                 console.log(json);
-    //                 let apparent_temperature = json.hourly.apparent_temperature;
-    //                 let wind_speed_10m = json.hourly.wind_speed_10m
-    //                 let precipitation_probability = json.hourly.precipitation_probability
-    //                 let cloud_cover = json.hourly.cloud_cover
-    //                 let weather = cyclingHours.map(hour => {
-    //                     let hourlyCityWeather: HourlyCityWeather = {
-    //                         temperature_f: apparent_temperature[hour],
-    //                         windSpeed_mph: wind_speed_10m[hour],
-    //                         rainProbability: precipitation_probability[hour],
-    //                         cloud_cover: cloud_cover[hour]
-    //                     }
-    //                     return hourlyCityWeather
-    //                 })
-    //                 setWeather(weather);
-    //                 setWeatherCache(prevCache => ({ ...prevCache, [key]: weather }));
-    //             })
-    //             .catch(error => console.error(error));
-    //     }
-    // }, [city]);
-
-    return null;
+function HourlyCityWeatherForecast({weather}) {
+    return <TableCell>
+         <div>Temp: {weather.temperature_f} F</div>
+         <div>Wind: {weather.windSpeed_mph} mph</div>
+         <div>Rain: {weather.rainProbability} %</div>
+         <div>{weather.clouds}</div>
+    </TableCell>
 }
