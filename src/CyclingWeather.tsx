@@ -1,5 +1,5 @@
 import { fetchCourses, CourseDescriptionData } from "./CourseDescriptionData"
-import { memo, useState, useEffect } from 'react';
+import { FunctionComponent, useState } from 'react';
 import { Md5 } from 'ts-md5';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -16,7 +16,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import { useWeather } from "./useWeather";
+import { useWeather, HourlyCityWeather } from './useWeather';
+import { cyclingHours } from './cyclingHours'
+import { useLatLon } from "./useLatLon";
 
 const fetcher = (url: string) => fetch(url).then(_ => _.json())
 
@@ -36,52 +38,59 @@ function nextSaturday() {
     return d
 }
 
-type CityWeather = HourlyCityWeather[]
-
-interface HourlyCityWeather {
-    temperature_f: number;
-    windSpeed_mph: number;
-    rainProbability: number;
-    cloud_cover: number;
-}
-
 function RoutesList() {
     const [forecastDate, setForecastDate] = useState(nextSaturday())
-    let courses: CourseDescriptionData[] = fetchCourses('./src/contents.json');
-    let listItems = courses.map(course => <CourseDescription course={course} date={forecastDate}/>)
+    const courses: CourseDescriptionData[] = fetchCourses(fetcher);
+    if (!courses) {
+        return <div></div>
+    }
+    const listItems = courses.map((course: CourseDescriptionData) => <CourseDescription course={course} date={forecastDate}/>)
     return <ul>{listItems}</ul>;
 }
 
-function CourseDescription({course, date}) {
-    return <li key={Md5.hashStr(course.name)}><div>
+type CourseDescriptionProps = {
+    course: CourseDescriptionData
+    date: Date
+}
+const CourseDescription: FunctionComponent<CourseDescriptionProps> = ({course, date}: CourseDescriptionProps) => {
+    return (<li key={Md5.hashStr(course.name)}><div>
         <div>{course.name} [<a href={course.garmin_connect_link}>link</a>]</div>
         <div>Distance: {course.distance_mi} miles</div>
         <div>Accent: {course.accent_ft} feet</div>
         <div><WeatherForecast cities={course.cities} date={date} /></div>
-    </div></li>;
+    </div></li>);
 }
 
-function WeatherForecast({cities, date}) {
+type WeatherForecastProps = {
+    cities: string[]
+    date: Date
+}
+const WeatherForecast: FunctionComponent<WeatherForecastProps> = ({ cities, date }: WeatherForecastProps) => {
     return <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
         <TableHead>
           <TableRow>
             <TableCell>City</TableCell>
-            {cyclingHours.map(hour => <TableCell>{hour}:00</TableCell>)}
+            {cyclingHours.map((hour: number) => <TableCell>{hour}:00</TableCell>)}
           </TableRow>
         </TableHead>
         <TableBody>
             {cities.map(city => <CityWeatherForecast city={city} date={date} />)}
         </TableBody>
         </Table>
-        </TableContainer>
+    </TableContainer>
 }
 
-function CityWeatherForecast({city, date}) {
-    const { data, error, isLoading } = useWeather(city, date, fetcher)
-
+type CityWeatherForecastProps = {
+    city: string
+    date: Date
+}
+const CityWeatherForecast: FunctionComponent<CityWeatherForecastProps> = ({ city, date }: CityWeatherForecastProps) => {
+    const { data: latlon } = useLatLon(city, fetcher)
+    console.log('City = [' + city + '], latlon = [' + JSON.stringify(latlon) + ']')
+    const { data, error, isLoading } = useWeather(latlon, date, fetcher)
     if (isLoading || !data || error) {
-        return <div></div>
+        return <TableRow></TableRow>
     }
     return <TableRow>
         <TableCell>{city}</TableCell>
@@ -89,11 +98,14 @@ function CityWeatherForecast({city, date}) {
     </TableRow>
 }
 
-function HourlyCityWeatherForecast({weather}) {
+type HourlyCityWeatherForecastProps = {
+    weather: HourlyCityWeather
+}
+const HourlyCityWeatherForecast: FunctionComponent<HourlyCityWeatherForecastProps> = ({ weather }: HourlyCityWeatherForecastProps) => {
     return <TableCell>
          <div>Temp: {weather.temperature_f} F</div>
          <div>Wind: {weather.windSpeed_mph} mph</div>
          <div>Rain: {weather.rainProbability} %</div>
-         <div>{weather.clouds}</div>
+         <div>{weather.cloud_cover}</div>
     </TableCell>
 }

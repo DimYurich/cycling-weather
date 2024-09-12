@@ -4,8 +4,9 @@ import { FunctionComponent } from 'react';
 import '@testing-library/jest-dom'
 import { SWRConfig } from 'swr'
 import 'isomorphic-fetch'
-import { fetchCourses } from './CourseDescriptionData' 
+import { CourseDescriptionData } from './CourseDescriptionData' 
 import { realFetcher, mockFetcherFor, fetcherFunc } from './testutils';
+import { readFileSync } from 'fs';
 
 type TestComponentProps = {
     city: string,
@@ -19,7 +20,11 @@ const TestComponent: FunctionComponent<TestComponentProps> = ({ city, fetcher }:
     } else if (error) {
         return (<div data-testid="error">Error: {error.message}</div>);
     } else {
-        return (<div data-testid="data">Data: {JSON.stringify(data)}</div>);
+        if (data?.latitude && data?.longitude) {
+            return (<div data-testid="data">Data: {JSON.stringify(data)}</div>);
+        } else {
+            return (<div data-testid="error">Error: No actual data</div>);
+        }    
     }
 }
 
@@ -74,9 +79,9 @@ describe('useLatLon component test', () => {
 })
 
 describe('cities in routes test', () => {
-    const rawData = fetchCourses('./src/contents.json');
+    const rawData = JSON.parse(readFileSync('./src/contents.json', 'utf-8'));
     const cities = new Set<string>()
-    rawData.forEach(course => course.cities.forEach(city => cities.add(city)))
+    rawData.forEach((course: CourseDescriptionData) => course.cities.forEach(city => cities.add(city)))
     
     cities.forEach(city => {
         it('Testing ' + city, async () => {

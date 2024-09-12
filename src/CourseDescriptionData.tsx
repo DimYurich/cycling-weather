@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import useSWR from 'swr'
 
 export interface CourseDescriptionData {
     name: string;
@@ -8,7 +8,10 @@ export interface CourseDescriptionData {
     cities: string[];
 }
 
-export const fetchCourses = (filename: string): CourseDescriptionData[] => {
-    let rawData = readFileSync(filename, 'utf-8')
-    return JSON.parse(rawData);
+export const fetchCourses = (fetcher: (_: string) => Promise<any>): CourseDescriptionData[] => {
+    const {data, error, isLoading } = useSWR('https://raw.githubusercontent.com/DimYurich/cycling-weather/main/src/contents.json', fetcher)
+    if (!data || error || isLoading) {
+        return []
+    }
+    return data;
 }
